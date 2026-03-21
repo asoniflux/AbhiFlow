@@ -18,7 +18,7 @@ export default function Settings() {
     const s = await ipcRenderer.invoke('get-settings');
     setSettings(s);
     setApiKey(s.groq_api_key || '');
-    setHotkey(s.hotkey || 'CommandOrControl+Shift+Space');
+    setHotkey(s.hotkey || 'fn');
   }
 
   async function saveSetting(key, value) {
@@ -96,16 +96,25 @@ export default function Settings() {
 
       {/* Hotkey */}
       <div className="bg-white/5 rounded-xl p-5 space-y-3">
-        <label className="block text-sm font-medium text-gray-300">Global Hotkey</label>
-        <input
-          type="text"
+        <label className="block text-sm font-medium text-gray-300">Dictation Trigger</label>
+        <select
           value={hotkey}
-          onChange={(e) => setHotkey(e.target.value)}
-          onBlur={() => saveSetting('hotkey', hotkey)}
+          onChange={(e) => {
+            setHotkey(e.target.value);
+            saveSetting('hotkey', e.target.value);
+          }}
           className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-abhiflow-500"
-        />
+        >
+          <option value="fn">Fn key (hold to dictate)</option>
+          <option value="CommandOrControl+Shift+Space">Cmd+Shift+Space (toggle)</option>
+        </select>
         <p className="text-gray-500 text-xs">
-          Default: CommandOrControl+Shift+Space. Uses Electron accelerator format.
+          {hotkey === 'fn'
+            ? 'Hold the Fn (Globe) key to record, release to stop and paste. Requires the native helper — run: bash scripts/build-fn-monitor.sh'
+            : 'Press once to start recording, press again to stop and paste.'}
+        </p>
+        <p className="text-gray-500 text-xs">
+          Restart AbhiFlow after changing the trigger.
         </p>
       </div>
 

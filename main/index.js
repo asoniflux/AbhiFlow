@@ -17,7 +17,6 @@ const { getDb } = require('./database');
 
 let settingsWindow = null;
 let overlayWindow = null;
-let isProcessing = false;
 
 // App state
 const State = {
@@ -56,12 +55,18 @@ app.whenReady().then(() => {
   const menuCallbacks = {
     onSettingsClick: () => createSettingsWindow(),
     onQuitClick: () => app.quit(),
-    onToggleRecording: () => toggleRecording(),
+    onToggleRecording: () => {
+      if (currentState === State.RECORDING) stopAndProcess();
+      else startRecording();
+    },
   };
   createTray(menuCallbacks);
 
-  // Register global hotkey
-  hotkey.register(() => toggleRecording());
+  // Register hotkey — Fn key hold-to-dictate (primary), globalShortcut toggle (fallback)
+  hotkey.register({
+    onStart: () => startRecording(),
+    onStop: () => stopAndProcess(),
+  });
 
   // Check for first launch
   const apiKey = database.getSetting('groq_api_key') || process.env.GROQ_API_KEY;
@@ -69,7 +74,8 @@ app.whenReady().then(() => {
     createSettingsWindow(true);
   }
 
-  console.log('[AbhiFlow] App ready. Press Cmd+Shift+Space to start dictating.');
+  const mode = hotkey.isUsingFnKey() ? 'Hold Fn key' : 'Press Cmd+Shift+Space';
+  console.log(`[AbhiFlow] App ready. ${mode} to dictate.`);
 });
 
 app.on('will-quit', () => {
@@ -172,19 +178,11 @@ function updateOverlayState(state, audioLevel = 0) {
 
 // --- Recording Pipeline ---
 
-async function toggleRecording() {
-  if (currentState === State.PROCESSING) {
-    return; // Don't interrupt processing
-  }
-
-  if (currentState === State.RECORDING) {
-    await stopAndProcess();
-  } else {
-    startRecording();
-  }
-}
-
 function startRecording() {
+  if (currentState !== State.IDLE) {
+    return; // Already recording or processing
+  }
+
   currentState = State.RECORDING;
 
   // Play start sound
@@ -198,7 +196,10 @@ function startRecording() {
   const menuCallbacks = {
     onSettingsClick: () => createSettingsWindow(),
     onQuitClick: () => app.quit(),
-    onToggleRecording: () => toggleRecording(),
+    onToggleRecording: () => {
+      if (currentState === State.RECORDING) stopAndProcess();
+      else startRecording();
+    },
   };
   setRecordingState(true, menuCallbacks);
 
@@ -219,6 +220,9 @@ function startRecording() {
 }
 
 async function stopAndProcess() {
+  if (currentState !== State.RECORDING) {
+    return; // Not recording, nothing to stop
+  }
   currentState = State.PROCESSING;
   updateOverlayState('processing');
 
@@ -229,7 +233,10 @@ async function stopAndProcess() {
   const menuCallbacks = {
     onSettingsClick: () => createSettingsWindow(),
     onQuitClick: () => app.quit(),
-    onToggleRecording: () => toggleRecording(),
+    onToggleRecording: () => {
+      if (currentState === State.RECORDING) stopAndProcess();
+      else startRecording();
+    },
   };
   setRecordingState(false, menuCallbacks);
 

@@ -28,5 +28,6 @@ files:
   - overlay/**/*
   - prompts/**/*
   - db/**/*
+  - helpers/fn-monitor
   - assets/**/*
   - node_modules/**/*

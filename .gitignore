@@ -6,3 +6,5 @@ renderer/dist/
 *.db-journal
 .DS_Store
 thumbs.db
+helpers/fn-monitor
+!helpers/fn-monitor.swift
