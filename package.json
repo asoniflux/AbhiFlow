@@ -1,0 +1,36 @@
+{
+  "name": "abhiflow",
+  "version": "1.0.0",
+  "description": "Voice dictation app for macOS by Abhishek Soni",
+  "main": "main/index.js",
+  "scripts": {
+    "dev": "electron .",
+    "build:renderer": "vite build",
+    "build:app": "electron-builder --mac --arm64",
+    "build": "npm run build:renderer && npm run build:app",
+    "start": "electron .",
+    "postinstall": "electron-rebuild"
+  },
+  "author": "Abhishek Soni",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.7",
+    "electron-store": "^10.0.0",
+    "groq-sdk": "^0.9.0",
+    "@jitsi/robotjs": "^0.6.13",
+    "node-record-lpcm16": "^1.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.7"
+  }
+}

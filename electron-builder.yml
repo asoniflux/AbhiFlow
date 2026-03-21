@@ -1,0 +1,32 @@
+appId: com.abhisheksoni.abhiflow
+productName: AbhiFlow
+copyright: Copyright © 2026 Abhishek Soni
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: arm64
+    - target: zip
+      arch: arm64
+  icon: assets/icon.icns
+  hardenedRuntime: true
+  entitlements: entitlements.mac.plist
+  entitlementsInherit: entitlements.mac.plist
+
+dmg:
+  title: AbhiFlow
+  icon: assets/icon.icns
+
+directories:
+  buildResources: assets
+  output: dist
+
+files:
+  - main/**/*
+  - renderer/dist/**/*
+  - overlay/**/*
+  - prompts/**/*
+  - db/**/*
+  - assets/**/*
+  - node_modules/**/*

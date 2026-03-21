@@ -1,0 +1,1 @@
+Clean up this dictated text that will be sent as a prompt to an AI assistant. Keep it detailed and well-structured. Preserve technical specificity and prompt structure. Remove filler words, fix punctuation. Return ONLY the cleaned text. No quotes, no explanation, no wrapper.

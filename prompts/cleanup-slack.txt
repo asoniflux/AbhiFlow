@@ -1,0 +1,1 @@
+Clean up this dictated text for a casual Slack message. Keep it conversational and concise. Use lowercase where natural. Remove filler words, fix punctuation. Return ONLY the cleaned text. No quotes, no explanation, no wrapper.
