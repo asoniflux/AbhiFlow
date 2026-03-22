@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Default settings
 INSERT OR IGNORE INTO settings (key, value) VALUES
-    ('hotkey', 'RightOption'),
+    ('hotkey', 'Fn'),
     ('language', 'en'),
     ('sound_enabled', 'true'),
     ('auto_launch', 'false'),

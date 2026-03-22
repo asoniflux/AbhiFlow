@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { app, BrowserWindow, shell, Notification } = require('electron');
+const { app, BrowserWindow, shell, Notification, dialog } = require('electron');
 const path = require('path');
 const database = require('./database');
 const { createTray, setRecordingState } = require('./tray');
@@ -14,6 +14,20 @@ const { matchSnippet } = require('./snippets');
 const { getContext } = require('./context');
 const { registerHandlers } = require('./ipc-handlers');
 const { getDb } = require('./database');
+
+// --- Global crash handlers — prevent silent death ---
+process.on('uncaughtException', (err) => {
+  console.error('[AbhiFlow] UNCAUGHT EXCEPTION:', err);
+  try {
+    dialog.showErrorBox('AbhiFlow Error', `${err.message}\n\n${err.stack}`);
+  } catch {
+    // dialog might not be available yet
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[AbhiFlow] UNHANDLED REJECTION:', reason);
+});
 
 let settingsWindow = null;
 let overlayWindow = null;
@@ -40,41 +54,46 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
-  // Hide dock icon — menu bar app only
-  if (app.dock) {
-    app.dock.hide();
+  try {
+    // Hide dock icon — menu bar app only
+    if (app.dock) {
+      app.dock.hide();
+    }
+
+    // Initialize database
+    database.initialize();
+
+    // Register IPC handlers
+    registerHandlers();
+
+    // Create tray
+    const menuCallbacks = {
+      onSettingsClick: () => createSettingsWindow(),
+      onQuitClick: () => app.quit(),
+      onToggleRecording: () => {
+        if (currentState === State.RECORDING) stopAndProcess();
+        else startRecording();
+      },
+    };
+    createTray(menuCallbacks);
+
+    // Register hotkey for hold-to-dictate
+    hotkey.register({
+      onStart: () => startRecording(),
+      onStop: () => stopAndProcess(),
+    });
+
+    // Check for first launch
+    const apiKey = database.getSetting('groq_api_key') || process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      createSettingsWindow(true);
+    }
+
+    console.log(`[AbhiFlow] App ready. Hold ${hotkey.getKeyName()} to dictate.`);
+  } catch (err) {
+    console.error('[AbhiFlow] Startup error:', err);
+    dialog.showErrorBox('AbhiFlow Startup Error', err.message + '\n\n' + err.stack);
   }
-
-  // Initialize database
-  database.initialize();
-
-  // Register IPC handlers
-  registerHandlers();
-
-  // Create tray
-  const menuCallbacks = {
-    onSettingsClick: () => createSettingsWindow(),
-    onQuitClick: () => app.quit(),
-    onToggleRecording: () => {
-      if (currentState === State.RECORDING) stopAndProcess();
-      else startRecording();
-    },
-  };
-  createTray(menuCallbacks);
-
-  // Register hotkey — Fn key hold-to-dictate (primary), globalShortcut toggle (fallback)
-  hotkey.register({
-    onStart: () => startRecording(),
-    onStop: () => stopAndProcess(),
-  });
-
-  // Check for first launch
-  const apiKey = database.getSetting('groq_api_key') || process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    createSettingsWindow(true);
-  }
-
-  console.log(`[AbhiFlow] App ready. Hold ${hotkey.getKeyName()} to dictate.`);
 });
 
 app.on('will-quit', () => {
@@ -119,7 +138,9 @@ function createSettingsWindow(showOnboarding = false) {
 
   if (showOnboarding) {
     settingsWindow.webContents.on('did-finish-load', () => {
-      settingsWindow.webContents.send('show-onboarding');
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('show-onboarding');
+      }
     });
   }
 
@@ -131,12 +152,16 @@ function createSettingsWindow(showOnboarding = false) {
 function createOverlayWindow() {
   if (overlayWindow) {
     try {
-      overlayWindow.show();
+      if (!overlayWindow.isDestroyed()) {
+        overlayWindow.show();
+      } else {
+        overlayWindow = null;
+      }
     } catch (err) {
       console.error('[AbhiFlow] Overlay show error:', err.message);
       overlayWindow = null;
     }
-    return;
+    if (overlayWindow) return;
   }
 
   try {
@@ -156,6 +181,7 @@ function createOverlayWindow() {
       resizable: false,
       hasShadow: false,
       focusable: false,
+      show: false,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -164,15 +190,16 @@ function createOverlayWindow() {
 
     overlayWindow.loadFile(path.join(__dirname, '..', 'overlay', 'index.html'));
 
-    // Wait for window to be ready before calling setIgnoresMouseEvents
-    overlayWindow.once('ready-to-show', () => {
+    // 'ready-to-show' does NOT fire for transparent windows.
+    // Use 'did-finish-load' instead.
+    overlayWindow.webContents.on('did-finish-load', () => {
+      if (!overlayWindow || overlayWindow.isDestroyed()) return;
       try {
-        if (overlayWindow && !overlayWindow.isDestroyed()) {
-          overlayWindow.setIgnoresMouseEvents(true);
-        }
+        overlayWindow.setIgnoresMouseEvents(true);
       } catch (err) {
         console.warn('[AbhiFlow] setIgnoresMouseEvents failed:', err.message);
       }
+      overlayWindow.showInactive();
     });
 
     overlayWindow.on('closed', () => {
@@ -185,14 +212,18 @@ function createOverlayWindow() {
 }
 
 function hideOverlay() {
-  if (overlayWindow) {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.hide();
   }
 }
 
 function updateOverlayState(state, audioLevel = 0) {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.webContents.send('state-update', { state, audioLevel });
+    try {
+      overlayWindow.webContents.send('state-update', { state, audioLevel });
+    } catch {
+      // overlay might be loading
+    }
   }
 }
 
@@ -230,6 +261,7 @@ function startRecording() {
     console.error('[AbhiFlow] Failed to start recording:', err.message);
     showNotification('AbhiFlow Error', `Recording failed: ${err.message}. Is sox installed? (brew install sox)`);
     hideOverlay();
+    setRecordingState(false, menuCallbacks);
     currentState = State.IDLE;
     return;
   }
@@ -347,7 +379,11 @@ function saveHistory(rawText, cleanedText, appContext, duration) {
 }
 
 function showNotification(title, body) {
-  if (Notification.isSupported()) {
-    new Notification({ title, body }).show();
+  try {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show();
+    }
+  } catch {
+    console.error('[AbhiFlow] Notification failed');
   }
 }

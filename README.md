@@ -71,7 +71,18 @@ nano .env
 
 ---
 
-## Step 3 — Run in Development Mode
+## Step 3 — Configure Fn Key (Important!)
+
+By default macOS uses the Fn/Globe key for emoji picker. You must change this:
+
+1. **System Settings → Keyboard**
+2. **"Press 🌐 key to"** → change to **"Do Nothing"**
+
+Without this, macOS intercepts the Fn key before AbhiFlow can see it. If you prefer not to change this, choose a different key (like Right Option) in AbhiFlow Settings.
+
+---
+
+## Step 4 — Run in Development Mode
 
 Open **two terminal tabs** (both must be in the AbhiFlow directory):
 
@@ -92,7 +103,7 @@ The app appears as a **menu bar icon** in the top-right of your screen. There is
 
 ---
 
-## Step 4 — Grant macOS Permissions
+## Step 5 — Grant macOS Permissions
 
 On first launch, macOS needs three permissions:
 
@@ -121,10 +132,10 @@ This lets AbhiFlow detect when you press and release the dictation key system-wi
 
 ## How to Use
 
-### Hold-to-Dictate (Right Option Key — Default)
+### Hold-to-Dictate (Fn Key — Default)
 
 1. Place your cursor where you want text (any app — VS Code, Slack, Chrome, Notes, etc.)
-2. **Hold** the **Right Option (⌥)** key on your keyboard
+2. **Hold** the **Fn (Globe 🌐)** key on your keyboard
 3. Speak naturally — a floating overlay appears showing a waveform
 4. **Release** the key
 5. AbhiFlow transcribes your speech, cleans it up, and pastes it at your cursor
@@ -136,7 +147,7 @@ This lets AbhiFlow detect when you press and release the dictation key system-wi
 Use AbhiFlow to transform existing text with AI:
 
 1. **Select** some text in any app
-2. Hold **Right Option** and say: *"command: make this more professional"*
+2. Hold **Fn** and say: *"command: make this more professional"*
    - Or: *"command: translate to Spanish"*
    - Or: *"hey abhiflow, summarize this"*
 3. Release — the selected text is **replaced** with the AI-modified version
@@ -202,15 +213,15 @@ This runs three steps automatically:
 Output is in the **`dist/`** folder:
 ```
 dist/
-├── AbhiFlow-2.0.0-arm64.dmg          # Drag-to-Applications installer
-├── AbhiFlow-2.0.0-arm64-mac.zip      # Zip for sharing
+├── AbhiFlow-2.1.0-arm64.dmg          # Drag-to-Applications installer
+├── AbhiFlow-2.1.0-arm64-mac.zip      # Zip for sharing
 └── mac-arm64/
     └── AbhiFlow.app                   # The app itself
 ```
 
 ### Step 3 — Install
 
-1. Open **`dist/AbhiFlow-2.0.0-arm64.dmg`**
+1. Open **`dist/AbhiFlow-2.1.0-arm64.dmg`**
 2. Drag **AbhiFlow** into **Applications**
 3. Close the DMG window
 
@@ -239,7 +250,7 @@ Same as Step 6 above, but now add **AbhiFlow** (from Applications) instead of El
 2. The onboarding wizard will ask for your **Groq API key**
 3. Paste your key (from [console.groq.com/keys](https://console.groq.com/keys))
 4. Grant permissions when prompted
-5. **Hold Right Option (⌥) → speak → release → text appears at cursor!**
+5. **Hold Fn → speak → release → text appears at cursor!**
 
 The app runs in the **menu bar** (top-right of screen). There's no Dock icon.
 Right-click the menu bar icon to access Settings or Quit.
@@ -337,11 +348,11 @@ npx vite --config vite.config.js &   # Terminal tab 1 (UI server)
 npm run dev                           # Terminal tab 2 (Electron)
 
 # 5. Grant permissions: Microphone + Accessibility + Input Monitoring
-# 6. Hold Right Option (⌥) → speak → release → text appears at cursor!
+# 6. Hold Fn → speak → release → text appears at cursor!
 
 # --- OR build a proper app ---
-npm run build                         # Creates dist/AbhiFlow-2.0.0-arm64.dmg
-open dist/AbhiFlow-2.0.0-arm64.dmg   # Install by dragging to Applications
+npm run build                         # Creates dist/AbhiFlow-2.1.0-arm64.dmg
+open dist/AbhiFlow-2.1.0-arm64.dmg   # Install by dragging to Applications
 ```
 
 ---

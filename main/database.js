@@ -22,10 +22,10 @@ function initialize() {
   const migration = fs.readFileSync(migrationPath, 'utf-8');
   db.exec(migration);
 
-  // Migrate old hotkey values
+  // Migrate old hotkey values to new format
   const hotkey = getSetting('hotkey');
   if (hotkey === 'fn' || hotkey === 'CommandOrControl+Shift+Space') {
-    setSetting('hotkey', 'RightOption');
+    setSetting('hotkey', 'Fn');
   }
 
   return db;

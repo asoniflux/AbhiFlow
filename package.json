@@ -1,6 +1,6 @@
 {
   "name": "abhiflow",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Voice dictation app for macOS by Abhishek Soni",
   "main": "main/index.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "build:renderer": "vite build",
     "build:app": "electron-builder --mac --arm64",
     "build:icons": "bash scripts/generate-icons.sh",
-    "build": "npm run build:icons && npm run build:renderer && npm run build:app",
+    "build:fn-monitor": "bash scripts/build-fn-monitor.sh",
+    "build": "npm run build:icons && npm run build:fn-monitor && npm run build:renderer && npm run build:app",
     "start": "electron .",
     "postinstall": "electron-rebuild"
   },

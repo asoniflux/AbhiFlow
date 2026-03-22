@@ -18,7 +18,7 @@ export default function Settings() {
     const s = await ipcRenderer.invoke('get-settings');
     setSettings(s);
     setApiKey(s.groq_api_key || '');
-    setHotkey(s.hotkey || 'RightOption');
+    setHotkey(s.hotkey || 'Fn');
   }
 
   async function saveSetting(key, value) {
@@ -105,6 +105,7 @@ export default function Settings() {
           }}
           className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-abhiflow-500"
         >
+          <option value="Fn">Fn / Globe (🌐) key</option>
           <option value="RightOption">Right Option (⌥) key</option>
           <option value="RightCmd">Right Command (⌘) key</option>
           <option value="RightCtrl">Right Control (⌃) key</option>
@@ -113,8 +114,6 @@ export default function Settings() {
           <option value="F6">F6</option>
           <option value="F9">F9</option>
           <option value="F10">F10</option>
-          <option value="F18">F18</option>
-          <option value="F19">F19</option>
         </select>
         <p className="text-gray-500 text-xs">
           Hold the key to start recording, release to stop and paste text.

@@ -34,6 +34,13 @@ directories:
   buildResources: assets
   output: dist
 
+# Native .node binaries MUST be outside the asar archive to load
+asarUnpack:
+  - "**/*.node"
+  - "node_modules/uiohook-napi/**"
+  - "node_modules/better-sqlite3/**"
+  - "node_modules/@jitsi/robotjs/**"
+
 files:
   - main/**/*
   - renderer/dist/**/*
@@ -43,9 +50,7 @@ files:
   - assets/**/*
   - node_modules/**/*
 
-# Include .env if it exists (for bundled API key)
-extraFiles:
-  - from: .env
-    to: .env
-    filter:
-      - .env
+# Bundle the Fn key Swift helper alongside the app
+extraResources:
+  - from: helpers/fn-monitor
+    to: fn-monitor
