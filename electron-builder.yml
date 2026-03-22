@@ -13,10 +13,22 @@ mac:
   hardenedRuntime: true
   entitlements: entitlements.mac.plist
   entitlementsInherit: entitlements.mac.plist
+  # Skip code signing for local builds (no Apple Developer account needed)
+  identity: null
 
 dmg:
   title: AbhiFlow
   icon: assets/icon.icns
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 140
+      y: 180
+    - x: 400
+      y: 180
+      type: link
+      path: /Applications
 
 directories:
   buildResources: assets
@@ -31,3 +43,10 @@ files:
   - helpers/fn-monitor
   - assets/**/*
   - node_modules/**/*
+
+# Include .env if it exists (for bundled API key)
+extraFiles:
+  - from: .env
+    to: .env
+    filter:
+      - .env

@@ -8,7 +8,8 @@
     "build:renderer": "vite build",
     "build:app": "electron-builder --mac --arm64",
     "build:fn-monitor": "bash scripts/build-fn-monitor.sh",
-    "build": "npm run build:fn-monitor && npm run build:renderer && npm run build:app",
+    "build:icons": "bash scripts/generate-icons.sh",
+    "build": "npm run build:icons && npm run build:fn-monitor && npm run build:renderer && npm run build:app",
     "start": "electron .",
     "postinstall": "electron-rebuild"
   },
