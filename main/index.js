@@ -74,8 +74,7 @@ app.whenReady().then(() => {
     createSettingsWindow(true);
   }
 
-  const mode = hotkey.isUsingFnKey() ? 'Hold Fn key' : 'Press Cmd+Shift+Space';
-  console.log(`[AbhiFlow] App ready. ${mode} to dictate.`);
+  console.log(`[AbhiFlow] App ready. Hold ${hotkey.getKeyName()} to dictate.`);
 });
 
 app.on('will-quit', () => {
@@ -131,37 +130,58 @@ function createSettingsWindow(showOnboarding = false) {
 
 function createOverlayWindow() {
   if (overlayWindow) {
-    overlayWindow.show();
+    try {
+      overlayWindow.show();
+    } catch (err) {
+      console.error('[AbhiFlow] Overlay show error:', err.message);
+      overlayWindow = null;
+    }
     return;
   }
 
-  const { screen } = require('electron');
-  const display = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = display.workAreaSize;
+  try {
+    const { screen } = require('electron');
+    const display = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = display.workAreaSize;
 
-  overlayWindow = new BrowserWindow({
-    width: 300,
-    height: 80,
-    x: Math.round((screenWidth - 300) / 2),
-    y: screenHeight - 120,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    hasShadow: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  });
+    overlayWindow = new BrowserWindow({
+      width: 300,
+      height: 80,
+      x: Math.round((screenWidth - 300) / 2),
+      y: screenHeight - 120,
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      resizable: false,
+      hasShadow: false,
+      focusable: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+    });
 
-  overlayWindow.loadFile(path.join(__dirname, '..', 'overlay', 'index.html'));
-  overlayWindow.setIgnoresMouseEvents(true);
+    overlayWindow.loadFile(path.join(__dirname, '..', 'overlay', 'index.html'));
 
-  overlayWindow.on('closed', () => {
+    // Wait for window to be ready before calling setIgnoresMouseEvents
+    overlayWindow.once('ready-to-show', () => {
+      try {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.setIgnoresMouseEvents(true);
+        }
+      } catch (err) {
+        console.warn('[AbhiFlow] setIgnoresMouseEvents failed:', err.message);
+      }
+    });
+
+    overlayWindow.on('closed', () => {
+      overlayWindow = null;
+    });
+  } catch (err) {
+    console.error('[AbhiFlow] Failed to create overlay:', err.message);
     overlayWindow = null;
-  });
+  }
 }
 
 function hideOverlay() {
@@ -204,7 +224,15 @@ function startRecording() {
   setRecordingState(true, menuCallbacks);
 
   // Start recording
-  recorder.startRecording();
+  try {
+    recorder.startRecording();
+  } catch (err) {
+    console.error('[AbhiFlow] Failed to start recording:', err.message);
+    showNotification('AbhiFlow Error', `Recording failed: ${err.message}. Is sox installed? (brew install sox)`);
+    hideOverlay();
+    currentState = State.IDLE;
+    return;
+  }
 
   // Update audio level periodically
   const levelInterval = setInterval(() => {

@@ -56,7 +56,7 @@ export default function Onboarding({ onComplete }) {
             </div>
             <h1 className="text-2xl font-bold text-white">Welcome to AbhiFlow</h1>
             <p className="text-gray-400">
-              System-wide voice dictation for macOS. Hold the Fn key from any app, speak, and clean text gets pasted at your cursor.
+              System-wide voice dictation for macOS. Hold the Right Option key from any app, speak, and clean text gets pasted at your cursor.
             </p>
             <button
               onClick={next}
@@ -148,7 +148,7 @@ export default function Onboarding({ onComplete }) {
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white">Test AbhiFlow</h2>
             <p className="text-sm text-gray-400">
-              Hold the <kbd className="bg-white/10 px-2 py-0.5 rounded text-white text-xs">Fn</kbd> key to record, speak something, then release to stop and paste.
+              Hold the <kbd className="bg-white/10 px-2 py-0.5 rounded text-white text-xs">Right Option ⌥</kbd> key to record, speak something, then release to stop and paste.
             </p>
             <div className="bg-white/5 rounded-xl p-6 text-center">
               <div className="text-gray-400 text-sm">
@@ -170,7 +170,7 @@ export default function Onboarding({ onComplete }) {
             <div className="text-4xl">&#10003;</div>
             <h2 className="text-xl font-bold text-white">You're All Set!</h2>
             <p className="text-gray-400 text-sm">
-              AbhiFlow is running in your menu bar. Hold the <kbd className="bg-white/10 px-2 py-0.5 rounded text-white text-xs">Fn</kbd> key from any app to dictate.
+              AbhiFlow is running in your menu bar. Hold the <kbd className="bg-white/10 px-2 py-0.5 rounded text-white text-xs">Right Option ⌥</kbd> key from any app to dictate.
             </p>
             <button
               onClick={onComplete}

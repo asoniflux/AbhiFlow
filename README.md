@@ -1,6 +1,6 @@
 # AbhiFlow
 
-**System-wide voice dictation for macOS.** Hold the Fn key from any app, speak, and clean text gets pasted at your cursor.
+**System-wide voice dictation for macOS.** Hold a key from any app, speak, and clean text gets pasted at your cursor.
 
 Built by Abhishek Soni.
 
@@ -23,7 +23,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # Node.js 18+ and SoX (audio recording engine)
 brew install node sox
 
-# Xcode Command Line Tools — needed to compile native modules + Swift helper
+# Xcode Command Line Tools — needed to compile native modules
 xcode-select --install
 ```
 
@@ -71,32 +71,7 @@ nano .env
 
 ---
 
-## Step 3 — Configure macOS for Fn Key
-
-**This step is critical!** By default, macOS uses the Fn/Globe key to open the emoji picker or system dictation, which blocks AbhiFlow from seeing it.
-
-### Disable the default Fn key action:
-
-1. Open **System Settings**
-2. Go to **Keyboard**
-3. Find **"Press 🌐 key to"**
-4. Change it to **"Do Nothing"**
-
-> If you skip this, AbhiFlow will fall back to **Cmd+Shift+Space** toggle mode instead.
-
----
-
-## Step 4 — Build the Fn Key Helper
-
-```bash
-bash scripts/build-fn-monitor.sh
-```
-
-This compiles a tiny Swift binary (`helpers/fn-monitor`) that monitors the Fn key press/release via macOS native APIs. It's what enables the "hold to dictate" experience.
-
----
-
-## Step 5 — Run in Development Mode
+## Step 3 — Run in Development Mode
 
 Open **two terminal tabs** (both must be in the AbhiFlow directory):
 
@@ -117,7 +92,7 @@ The app appears as a **menu bar icon** in the top-right of your screen. There is
 
 ---
 
-## Step 6 — Grant macOS Permissions
+## Step 4 — Grant macOS Permissions
 
 On first launch, macOS needs three permissions:
 
@@ -132,44 +107,36 @@ This lets AbhiFlow simulate `Cmd+V` to paste text into other apps.
 3. Navigate to and add the **Electron** app (in dev mode it's at `node_modules/electron/dist/Electron.app`)
 4. Make sure the toggle is **on**
 
-### 3. Input Monitoring (manual — for Fn key)
-This lets the Fn key monitor detect key presses system-wide.
+### 3. Input Monitoring (manual — for hold-to-dictate key)
+This lets AbhiFlow detect when you press and release the dictation key system-wide.
 
 1. Open **System Settings → Privacy & Security → Input Monitoring**
 2. Click the **+** button
-3. Add **Terminal** (for dev mode) or **AbhiFlow** (for the built app)
+3. Add **Terminal** and/or **Electron** (for dev mode) or **AbhiFlow** (for the built app)
 4. Make sure the toggle is **on**
 
-> Without these permissions: Microphone = no audio capture, Accessibility = text won't paste, Input Monitoring = Fn key won't trigger dictation.
+> Without these permissions: Microphone = no audio, Accessibility = text won't paste, Input Monitoring = hold-to-dictate won't trigger.
 
 ---
 
 ## How to Use
 
-### Hold-to-Dictate (Fn Key — Default)
+### Hold-to-Dictate (Right Option Key — Default)
 
 1. Place your cursor where you want text (any app — VS Code, Slack, Chrome, Notes, etc.)
-2. **Hold** the **Fn** (Globe) key on your keyboard
+2. **Hold** the **Right Option (⌥)** key on your keyboard
 3. Speak naturally — a floating overlay appears showing a waveform
-4. **Release** the Fn key
+4. **Release** the key
 5. AbhiFlow transcribes your speech, cleans it up, and pastes it at your cursor
 
-### Toggle Mode (Cmd+Shift+Space — Fallback)
-
-If you prefer toggle mode, or the Fn helper isn't compiled:
-
-1. Press **Cmd+Shift+Space** → recording starts
-2. Speak
-3. Press **Cmd+Shift+Space** again → recording stops, text is processed and pasted
-
-You can switch between modes in **Settings → Dictation Trigger**.
+> You can change the dictation key in **Settings → Dictation Key**. Options include Right Option, Right Command, Right Ctrl, Right Shift, F5-F19, etc.
 
 ### Command Mode
 
 Use AbhiFlow to transform existing text with AI:
 
 1. **Select** some text in any app
-2. Hold **Fn** and say: *"command: make this more professional"*
+2. Hold **Right Option** and say: *"command: make this more professional"*
    - Or: *"command: translate to Spanish"*
    - Or: *"hey abhiflow, summarize this"*
 3. Release — the selected text is **replaced** with the AI-modified version
@@ -223,11 +190,10 @@ cd ~/AbhiFlow
 npm run build
 ```
 
-This runs four steps automatically:
+This runs three steps automatically:
 1. **`build:icons`** — generates app icon (.icns) and tray icons
-2. **`build:fn-monitor`** — compiles the Swift Fn key helper
-3. **`build:renderer`** — builds the React UI with Vite
-4. **`build:app`** — packages everything into a macOS `.dmg` via electron-builder
+2. **`build:renderer`** — builds the React UI with Vite
+3. **`build:app`** — packages everything into a macOS `.dmg` via electron-builder
 
 > No Apple Developer account is needed — the build is unsigned (fine for personal use).
 
@@ -266,7 +232,6 @@ Same as Step 6 above, but now add **AbhiFlow** (from Applications) instead of El
 1. **System Settings → Privacy & Security → Microphone** → enable AbhiFlow
 2. **System Settings → Privacy & Security → Accessibility** → add AbhiFlow
 3. **System Settings → Privacy & Security → Input Monitoring** → add AbhiFlow
-4. **System Settings → Keyboard → Press 🌐 key to** → "Do Nothing"
 
 ### Step 6 — Launch and configure
 
@@ -285,8 +250,7 @@ Right-click the menu bar icon to access Settings or Quit.
 
 | Problem | Solution |
 |---------|----------|
-| Fn key opens emoji picker | **System Settings → Keyboard → Press 🌐 key to → "Do Nothing"** |
-| Fn key not triggering dictation | Grant **Input Monitoring** permission + compile helper: `bash scripts/build-fn-monitor.sh` |
+| Hold key not triggering dictation | Grant **Input Monitoring** permission in System Settings |
 | `sox` not found / recording fails | `brew install sox` |
 | Text not pasting into apps | Grant **Accessibility** permission in System Settings |
 | "Invalid API key" error | Get a fresh key at [console.groq.com/keys](https://console.groq.com/keys) |
@@ -306,7 +270,7 @@ Right-click the menu bar icon to access Settings or Quit.
 AbhiFlow/
 ├── main/               # Electron main process
 │   ├── index.js         #   App entry, recording pipeline
-│   ├── hotkey.js        #   Fn key + globalShortcut handling
+│   ├── hotkey.js        #   Hold-to-dictate via uiohook-napi
 │   ├── recorder.js      #   Audio capture via SoX
 │   ├── transcriber.js   #   Groq Whisper speech-to-text
 │   ├── cleaner.js       #   Groq Llama text cleanup
@@ -323,12 +287,9 @@ AbhiFlow/
 │   └── styles/          #   Tailwind globals
 ├── overlay/             # Floating recording indicator
 │   └── index.html       #   Waveform + status display
-├── helpers/             # Native macOS helpers
-│   └── fn-monitor.swift #   Fn key press/release monitor
 ├── prompts/             # AI prompt templates
 ├── db/migrations/       # SQLite schema
 ├── scripts/             # Build scripts
-│   ├── build-fn-monitor.sh    # Compile Swift helper
 │   └── generate-icons.sh      # Generate app + tray icons
 ├── assets/              # App icons (generated)
 ├── package.json
@@ -351,7 +312,7 @@ AbhiFlow/
 | Audio recording | SoX (via node-record-lpcm16) |
 | Database | SQLite (via better-sqlite3) |
 | Key automation | @jitsi/robotjs |
-| Fn key detection | Swift + NSEvent (native macOS) |
+| Hold-to-dictate key | uiohook-napi (global keydown/keyup) |
 | Packaging | electron-builder |
 
 ---
@@ -371,18 +332,12 @@ cd AbhiFlow && npm install
 cp .env.example .env
 nano .env   # paste your gsk_... key, save with Ctrl+O
 
-# 4. IMPORTANT: Disable default Fn key behavior
-#    System Settings → Keyboard → Press 🌐 key to → "Do Nothing"
-
-# 5. Build Fn key helper
-bash scripts/build-fn-monitor.sh
-
-# 6. Run in dev mode
+# 4. Run in dev mode
 npx vite --config vite.config.js &   # Terminal tab 1 (UI server)
 npm run dev                           # Terminal tab 2 (Electron)
 
-# 7. Grant permissions: Microphone + Accessibility + Input Monitoring
-# 8. Hold Fn → speak → release → text appears at cursor!
+# 5. Grant permissions: Microphone + Accessibility + Input Monitoring
+# 6. Hold Right Option (⌥) → speak → release → text appears at cursor!
 
 # --- OR build a proper app ---
 npm run build                         # Creates dist/AbhiFlow-1.0.0-arm64.dmg

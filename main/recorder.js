@@ -1,3 +1,4 @@
+const { execSync } = require('child_process');
 const record = require('node-record-lpcm16');
 
 let recording = null;
@@ -8,6 +9,37 @@ const SAMPLE_RATE = 16000;
 const CHANNELS = 1;
 const BIT_DEPTH = 16;
 
+// Fix PATH for packaged apps — Homebrew installs to /opt/homebrew/bin on Apple Silicon
+// Electron packaged apps don't inherit the user's shell PATH
+function fixPath() {
+  const extraPaths = ['/opt/homebrew/bin', '/usr/local/bin', '/opt/local/bin'];
+  const currentPath = process.env.PATH || '';
+  for (const p of extraPaths) {
+    if (!currentPath.includes(p)) {
+      process.env.PATH = `${p}:${currentPath}`;
+    }
+  }
+}
+fixPath();
+
+// Find sox binary path
+function findSoxPath() {
+  const candidates = ['/opt/homebrew/bin/sox', '/usr/local/bin/sox', '/usr/bin/sox'];
+  const fs = require('fs');
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  // Try which
+  try {
+    return execSync('which sox', { timeout: 3000 }).toString().trim();
+  } catch {
+    return 'sox'; // fallback, let it fail with a clear error
+  }
+}
+
+const SOX_PATH = findSoxPath();
+console.log(`[AbhiFlow] Using sox at: ${SOX_PATH}`);
+
 function startRecording() {
   audioChunks = [];
   startTime = Date.now();
@@ -17,6 +49,9 @@ function startRecording() {
     channels: CHANNELS,
     audioType: 'raw',
     recorder: 'sox',
+    // Pass the full path to sox via the 'soxPath' option
+    // node-record-lpcm16 doesn't support soxPath directly,
+    // so we ensure PATH is set correctly above
   });
 
   const stream = recording.stream();

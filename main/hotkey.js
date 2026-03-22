@@ -1,143 +1,120 @@
-const { globalShortcut } = require('electron');
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const { uIOhook, UiohookKey } = require('uiohook-napi');
 const { getSetting } = require('./database');
 
-let currentHotkey = null;
 let onStartCallback = null;
 let onStopCallback = null;
-let fnMonitorProcess = null;
-let usingFnKey = false;
+let isHolding = false;
+let started = false;
+let dictateKeyCode = null;
+
+// Map of friendly names to uiohook key codes
+const KEY_MAP = {
+  'RightOption': UiohookKey.AltRight,
+  'RightCmd': UiohookKey.MetaRight,
+  'RightCtrl': UiohookKey.CtrlRight,
+  'RightShift': UiohookKey.ShiftRight,
+  'F5': UiohookKey.F5,
+  'F6': UiohookKey.F6,
+  'F7': UiohookKey.F7,
+  'F8': UiohookKey.F8,
+  'F9': UiohookKey.F9,
+  'F10': UiohookKey.F10,
+  'F11': UiohookKey.F11,
+  'F12': UiohookKey.F12,
+  'F13': UiohookKey.F13,
+  'F14': UiohookKey.F14,
+  'F15': UiohookKey.F15,
+  'F16': UiohookKey.F16,
+  'F17': UiohookKey.F17,
+  'F18': UiohookKey.F18,
+  'F19': UiohookKey.F19,
+  'F20': UiohookKey.F20,
+  'CapsLock': UiohookKey.CapsLock,
+};
+
+// Reverse map for display
+const CODE_TO_NAME = {};
+for (const [name, code] of Object.entries(KEY_MAP)) {
+  CODE_TO_NAME[code] = name;
+}
 
 /**
- * Register hotkey with separate start/stop callbacks for hold-to-dictate.
- * Tries Fn key monitor first (macOS native Swift helper).
- * Falls back to Electron globalShortcut toggle if Fn monitor isn't available.
+ * Register hold-to-dictate with uiohook-napi.
+ * User holds a key → onStart fires. User releases → onStop fires.
  */
 function register({ onStart, onStop }) {
   onStartCallback = onStart;
   onStopCallback = onStop;
 
-  const hotkeySetting = getSetting('hotkey') || 'fn';
+  let hotkeySetting = getSetting('hotkey') || 'RightOption';
 
-  if (hotkeySetting === 'fn') {
-    const started = startFnMonitor();
-    if (started) {
-      usingFnKey = true;
-      console.log('[AbhiFlow] Fn key (hold-to-dictate) registered');
-      return true;
-    }
-    // Fn monitor failed, fall back to globalShortcut toggle
-    console.warn('[AbhiFlow] Fn monitor not available, falling back to Cmd+Shift+Space toggle');
-    return registerGlobalShortcut('CommandOrControl+Shift+Space');
+  // Migration: old 'fn' setting → RightOption
+  if (hotkeySetting === 'fn' || hotkeySetting === 'CommandOrControl+Shift+Space') {
+    hotkeySetting = 'RightOption';
   }
 
-  return registerGlobalShortcut(hotkeySetting);
-}
-
-function registerGlobalShortcut(hotkey) {
-  if (currentHotkey) {
-    globalShortcut.unregister(currentHotkey);
+  // Resolve the key code
+  dictateKeyCode = KEY_MAP[hotkeySetting];
+  if (!dictateKeyCode) {
+    console.warn(`[AbhiFlow] Unknown hotkey "${hotkeySetting}", defaulting to RightOption`);
+    dictateKeyCode = UiohookKey.AltRight;
   }
 
-  // Toggle mode: first press starts, second press stops
-  let isRecording = false;
+  const keyName = CODE_TO_NAME[dictateKeyCode] || hotkeySetting;
 
-  const success = globalShortcut.register(hotkey, () => {
-    if (!isRecording) {
-      isRecording = true;
-      if (onStartCallback) onStartCallback();
-    } else {
-      isRecording = false;
-      if (onStopCallback) onStopCallback();
+  // Set up uiohook event listeners
+  uIOhook.on('keydown', (e) => {
+    if (e.keycode === dictateKeyCode && !isHolding) {
+      isHolding = true;
+      if (onStartCallback) {
+        try {
+          onStartCallback();
+        } catch (err) {
+          console.error('[AbhiFlow] onStart error:', err.message);
+        }
+      }
     }
   });
 
-  if (success) {
-    currentHotkey = hotkey;
-    console.log(`[AbhiFlow] Global hotkey registered: ${hotkey} (toggle mode)`);
-  } else {
-    console.error(`[AbhiFlow] Failed to register hotkey: ${hotkey}`);
-  }
-
-  return success;
-}
-
-function startFnMonitor() {
-  // Look for the compiled Swift binary
-  const binaryPath = path.join(__dirname, '..', 'helpers', 'fn-monitor');
-
-  if (!fs.existsSync(binaryPath)) {
-    console.warn(`[AbhiFlow] Fn monitor binary not found at ${binaryPath}`);
-    console.warn('[AbhiFlow] Run: bash scripts/build-fn-monitor.sh');
-    return false;
-  }
-
-  try {
-    fnMonitorProcess = spawn(binaryPath, [], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let isHolding = false;
-
-    fnMonitorProcess.stdout.on('data', (data) => {
-      const lines = data.toString().trim().split('\n');
-      for (const line of lines) {
-        const msg = line.trim();
-        if (msg === 'down' && !isHolding) {
-          isHolding = true;
-          if (onStartCallback) onStartCallback();
-        } else if (msg === 'up' && isHolding) {
-          isHolding = false;
-          if (onStopCallback) onStopCallback();
-        } else if (msg === 'ready') {
-          console.log('[AbhiFlow] Fn key monitor ready');
+  uIOhook.on('keyup', (e) => {
+    if (e.keycode === dictateKeyCode && isHolding) {
+      isHolding = false;
+      if (onStopCallback) {
+        try {
+          onStopCallback();
+        } catch (err) {
+          console.error('[AbhiFlow] onStop error:', err.message);
         }
       }
-    });
+    }
+  });
 
-    fnMonitorProcess.stderr.on('data', (data) => {
-      console.error('[AbhiFlow] Fn monitor error:', data.toString());
-    });
-
-    fnMonitorProcess.on('exit', (code) => {
-      console.log(`[AbhiFlow] Fn monitor exited with code ${code}`);
-      fnMonitorProcess = null;
-    });
-
-    fnMonitorProcess.on('error', (err) => {
-      console.error('[AbhiFlow] Fn monitor spawn error:', err.message);
-      fnMonitorProcess = null;
-    });
-
+  // Start the hook
+  try {
+    uIOhook.start();
+    started = true;
+    console.log(`[AbhiFlow] Hold-to-dictate registered: ${keyName} (hold to record, release to stop)`);
     return true;
   } catch (err) {
-    console.error('[AbhiFlow] Failed to start Fn monitor:', err.message);
+    console.error('[AbhiFlow] Failed to start uiohook:', err.message);
     return false;
-  }
-}
-
-function stopFnMonitor() {
-  if (fnMonitorProcess) {
-    fnMonitorProcess.kill();
-    fnMonitorProcess = null;
   }
 }
 
 function unregister() {
-  stopFnMonitor();
-  if (currentHotkey) {
-    globalShortcut.unregister(currentHotkey);
-    currentHotkey = null;
+  if (started) {
+    try {
+      uIOhook.stop();
+    } catch (err) {
+      console.warn('[AbhiFlow] uiohook stop error:', err.message);
+    }
+    started = false;
+    isHolding = false;
   }
 }
 
 function unregisterAll() {
-  stopFnMonitor();
-  globalShortcut.unregisterAll();
-  currentHotkey = null;
-  usingFnKey = false;
+  unregister();
 }
 
 function reregister() {
@@ -148,8 +125,11 @@ function reregister() {
   return false;
 }
 
-function isUsingFnKey() {
-  return usingFnKey;
+function getKeyName() {
+  if (dictateKeyCode) {
+    return CODE_TO_NAME[dictateKeyCode] || 'Unknown';
+  }
+  return getSetting('hotkey') || 'RightOption';
 }
 
-module.exports = { register, unregister, unregisterAll, reregister, isUsingFnKey };
+module.exports = { register, unregister, unregisterAll, reregister, getKeyName, KEY_MAP };

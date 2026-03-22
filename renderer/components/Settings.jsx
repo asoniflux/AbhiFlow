@@ -18,7 +18,7 @@ export default function Settings() {
     const s = await ipcRenderer.invoke('get-settings');
     setSettings(s);
     setApiKey(s.groq_api_key || '');
-    setHotkey(s.hotkey || 'fn');
+    setHotkey(s.hotkey || 'RightOption');
   }
 
   async function saveSetting(key, value) {
@@ -96,7 +96,7 @@ export default function Settings() {
 
       {/* Hotkey */}
       <div className="bg-white/5 rounded-xl p-5 space-y-3">
-        <label className="block text-sm font-medium text-gray-300">Dictation Trigger</label>
+        <label className="block text-sm font-medium text-gray-300">Dictation Key (hold to dictate)</label>
         <select
           value={hotkey}
           onChange={(e) => {
@@ -105,16 +105,22 @@ export default function Settings() {
           }}
           className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-abhiflow-500"
         >
-          <option value="fn">Fn key (hold to dictate)</option>
-          <option value="CommandOrControl+Shift+Space">Cmd+Shift+Space (toggle)</option>
+          <option value="RightOption">Right Option (⌥) key</option>
+          <option value="RightCmd">Right Command (⌘) key</option>
+          <option value="RightCtrl">Right Control (⌃) key</option>
+          <option value="RightShift">Right Shift key</option>
+          <option value="F5">F5</option>
+          <option value="F6">F6</option>
+          <option value="F9">F9</option>
+          <option value="F10">F10</option>
+          <option value="F18">F18</option>
+          <option value="F19">F19</option>
         </select>
         <p className="text-gray-500 text-xs">
-          {hotkey === 'fn'
-            ? 'Hold the Fn (Globe) key to record, release to stop and paste. Requires the native helper — run: bash scripts/build-fn-monitor.sh'
-            : 'Press once to start recording, press again to stop and paste.'}
+          Hold the key to start recording, release to stop and paste text.
         </p>
         <p className="text-gray-500 text-xs">
-          Restart AbhiFlow after changing the trigger.
+          Restart AbhiFlow after changing the trigger key.
         </p>
       </div>
 
