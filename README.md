@@ -202,15 +202,15 @@ This runs three steps automatically:
 Output is in the **`dist/`** folder:
 ```
 dist/
-├── AbhiFlow-1.0.0-arm64.dmg          # Drag-to-Applications installer
-├── AbhiFlow-1.0.0-arm64-mac.zip      # Zip for sharing
+├── AbhiFlow-2.0.0-arm64.dmg          # Drag-to-Applications installer
+├── AbhiFlow-2.0.0-arm64-mac.zip      # Zip for sharing
 └── mac-arm64/
     └── AbhiFlow.app                   # The app itself
 ```
 
 ### Step 3 — Install
 
-1. Open **`dist/AbhiFlow-1.0.0-arm64.dmg`**
+1. Open **`dist/AbhiFlow-2.0.0-arm64.dmg`**
 2. Drag **AbhiFlow** into **Applications**
 3. Close the DMG window
 
@@ -239,7 +239,7 @@ Same as Step 6 above, but now add **AbhiFlow** (from Applications) instead of El
 2. The onboarding wizard will ask for your **Groq API key**
 3. Paste your key (from [console.groq.com/keys](https://console.groq.com/keys))
 4. Grant permissions when prompted
-5. **Hold Fn → speak → release → text appears at cursor!**
+5. **Hold Right Option (⌥) → speak → release → text appears at cursor!**
 
 The app runs in the **menu bar** (top-right of screen). There's no Dock icon.
 Right-click the menu bar icon to access Settings or Quit.
@@ -340,8 +340,8 @@ npm run dev                           # Terminal tab 2 (Electron)
 # 6. Hold Right Option (⌥) → speak → release → text appears at cursor!
 
 # --- OR build a proper app ---
-npm run build                         # Creates dist/AbhiFlow-1.0.0-arm64.dmg
-open dist/AbhiFlow-1.0.0-arm64.dmg   # Install by dragging to Applications
+npm run build                         # Creates dist/AbhiFlow-2.0.0-arm64.dmg
+open dist/AbhiFlow-2.0.0-arm64.dmg   # Install by dragging to Applications
 ```
 
 ---
